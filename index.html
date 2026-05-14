@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    /* Add form */
+    .add-form {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .add-form input,
+    .add-form textarea {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      padding: 0.6rem 0.85rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+
+    .add-form input:focus,
+    .add-form textarea:focus { border-color: #6366f1; }
+
+    .add-form textarea { resize: vertical; min-height: 72px; }
+
+    .add-form input::placeholder,
+    .add-form textarea::placeholder { color: #475569; }
+
+    .add-btn {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      align-self: flex-end;
+    }
+
+    .add-btn:hover { background: #4f46e5; }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .filter-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      border-radius: 99px;
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+    /* Job list */
+    #job-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .empty {
+      text-align: center;
+      color: #475569;
+      padding: 3rem 0;
+      font-size: 0.95rem;
+    }
+
+    /* Job card */
+    .job-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      transition: border-color 0.15s;
+    }
+
+    .job-card.applied { border-left: 3px solid #22c55e; }
+    .job-card.not-applied { border-left: 3px solid #475569; }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .job-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      flex: 1;
+    }
+
+    .job-company {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-top: 0.15rem;
+    }
+
+    .card-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    .apply-toggle {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 99px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .apply-toggle.applied-state {
+      background: #14532d;
+      color: #4ade80;
+    }
+
+    .apply-toggle.applied-state:hover {
+      background: #166534;
+    }
+
+    .apply-toggle.not-applied-state {
+      background: #1e3a5f;
+      color: #93c5fd;
+    }
+
+    .apply-toggle.not-applied-state:hover {
+      background: #1e40af;
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #64748b;
+      border-radius: 6px;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .delete-btn:hover { background: #7f1d1d; color: #fca5a5; border-color: #7f1d1d; }
+
+    /* Notes section */
+    .notes-toggle {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: 0.6rem;
+      padding: 0;
+      transition: color 0.15s;
+    }
+
+    .notes-toggle:hover { color: #94a3b8; }
+
+    .notes-area {
+      margin-top: 0.6rem;
+      display: none;
+    }
+
+    .notes-area.open { display: block; }
+
+    .notes-area textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      padding: 0.6rem 0.75rem;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    .notes-area textarea:focus { border-color: #6366f1; }
+
+    .note-text {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .save-note-btn {
+      margin-top: 0.4rem;
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 6px;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .save-note-btn:hover { background: #475569; }
+
+    .date-added {
+      font-size: 0.75rem;
+      color: #475569;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Job Tracker</h1>
+
+    <div class="add-form">
+      <input type="text" id="input-title" placeholder="Job title (e.g. Frontend Engineer)" />
+      <input type="text" id="input-company" placeholder="Company (optional)" />
+      <textarea id="input-notes" placeholder="Notes (optional)"></textarea>
+      <button class="add-btn" onclick="addJob()">Add Job</button>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" data-filter="applied" onclick="setFilter('applied', this)">Applied</button>
+      <button class="filter-btn" data-filter="not-applied" onclick="setFilter('not-applied', this)">Not Applied</button>
+    </div>
+
+    <div id="job-list"></div>
+  </div>
+
+  <script>
+    let jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+    let currentFilter = 'all';
+
+    function save() {
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+    }
+
+    function addJob() {
+      const title = document.getElementById('input-title').value.trim();
+      if (!title) {
+        document.getElementById('input-title').focus();
+        return;
+      }
+      const company = document.getElementById('input-company').value.trim();
+      const notes = document.getElementById('input-notes').value.trim();
+      jobs.unshift({
+        id: Date.now(),
+        title,
+        company,
+        notes,
+        applied: false,
+        date: new Date().toLocaleDateString()
+      });
+      save();
+      document.getElementById('input-title').value = '';
+      document.getElementById('input-company').value = '';
+      document.getElementById('input-notes').value = '';
+      render();
+    }
+
+    function toggleApplied(id) {
+      const job = jobs.find(j => j.id === id);
+      if (job) { job.applied = !job.applied; save(); render(); }
+    }
+
+    function deleteJob(id) {
+      jobs = jobs.filter(j => j.id !== id);
+      save();
+      render();
+    }
+
+    function saveNote(id) {
+      const ta = document.querySelector(`[data-note-id="${id}"]`);
+      if (!ta) return;
+      const job = jobs.find(j => j.id === id);
+      if (job) { job.notes = ta.value; save(); render(); }
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function toggleNotes(id) {
+      const area = document.getElementById(`notes-area-${id}`);
+      const btn = document.getElementById(`notes-btn-${id}`);
+      if (!area) return;
+      const isOpen = area.classList.toggle('open');
+      btn.textContent = isOpen ? '▲ Hide notes' : '▼ ' + (jobs.find(j=>j.id===id)?.notes ? 'View / edit notes' : 'Add notes');
+    }
+
+    function render() {
+      const list = document.getElementById('job-list');
+      let filtered = jobs;
+      if (currentFilter === 'applied') filtered = jobs.filter(j => j.applied);
+      if (currentFilter === 'not-applied') filtered = jobs.filter(j => !j.applied);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty">No jobs here yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(job => {
+        const hasNotes = !!job.notes;
+        const notesLabel = hasNotes ? '▼ View / edit notes' : '▼ Add notes';
+        return `
+          <div class="job-card ${job.applied ? 'applied' : 'not-applied'}">
+            <div class="card-header">
+              <div>
+                <div class="job-title">${escHtml(job.title)}</div>
+                ${job.company ? `<div class="job-company">${escHtml(job.company)}</div>` : ''}
+              </div>
+              <div class="card-actions">
+                <button
+                  class="apply-toggle ${job.applied ? 'applied-state' : 'not-applied-state'}"
+                  onclick="toggleApplied(${job.id})"
+                >${job.applied ? '✓ Applied' : 'Not Applied'}</button>
+                <button class="delete-btn" onclick="deleteJob(${job.id})">✕</button>
+              </div>
+            </div>
+            <button class="notes-toggle" id="notes-btn-${job.id}" onclick="toggleNotes(${job.id})">${notesLabel}</button>
+            <div class="notes-area" id="notes-area-${job.id}">
+              <textarea data-note-id="${job.id}" placeholder="Add notes...">${escHtml(job.notes || '')}</textarea>
+              <button class="save-note-btn" onclick="saveNote(${job.id})">Save note</button>
+            </div>
+            <div class="date-added">Added ${job.date}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Add job on Enter in title field
+    document.getElementById('input-title').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addJob();
+    });
+
+    render();
+  </script>
+</body>
+</html>
